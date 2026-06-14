@@ -1,48 +1,224 @@
-# === PIPELINE NLP ===
-# Tokenización -> Stopwords -> Lematización
+# ==========================================================
+# INFORME DE CORPUS NLP
+# Tokenización - Stopwords - Lematización - TF-IDF
+# ==========================================================
 
-import nltk
-from nltk.corpus import stopwords
+from collections import Counter
+import matplotlib.pyplot as plt
+
 from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# (ejecutar solo la primera vez)
-# nltk.download('punkt')
-# nltk.download('stopwords')
-# nltk.download('wordnet')
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-# función para quitar stopwords (inglés)
-def quitarStopwords_eng(tokens):
-    stop_words = set(stopwords.words('english'))
-    return [t for t in tokens if t.isalpha() and t.lower() not in stop_words]
+# ==========================================================
+# FUNCIONES
+# ==========================================================
+
+def quitar_stopwords_eng(tokens):
+    """
+    Elimina stopwords y caracteres no alfabéticos.
+    """
+
+    try:
+
+        stop_words = set(stopwords.words("english"))
+
+        return [
+
+            token.lower()
+
+            for token in tokens
+
+            if token.isalpha()
+            and token.lower() not in stop_words
+
+        ]
+
+    except Exception as e:
+
+        print("Error cargando stopwords:", e)
+
+        return tokens
 
 
-# función de lematización
 def lematizar(tokens):
-    lemmatizer = WordNetLemmatizer()
-    return [lemmatizer.lemmatize(t) for t in tokens]
+    """
+    Lematización del texto.
+    """
+
+    try:
+
+        lemmatizer = WordNetLemmatizer()
+
+        return [
+
+            lemmatizer.lemmatize(token)
+
+            for token in tokens
+
+        ]
+
+    except Exception as e:
+
+        print("Error durante la lematización:", e)
+
+        return tokens
 
 
-# === CORPUS (dado por el ejercicio) ===
-corpus = [
-    lematizar(quitarStopwords_eng(word_tokenize("Python is an interpreted and high-level language, while CPlus is a compiled and low-level language .-"))),
-    lematizar(quitarStopwords_eng(word_tokenize("JavaScript runs in web browsers, while Python is used in various applications, including data science and artificial intelligence."))),
-    lematizar(quitarStopwords_eng(word_tokenize("JavaScript is dynamically and weakly typed, while Rust is statically typed and ensures greater data security .-"))),
-    lematizar(quitarStopwords_eng(word_tokenize("Python and JavaScript are interpreted languages, while Java, CPlus, and Rust require compilation before execution."))),
-    lematizar(quitarStopwords_eng(word_tokenize("JavaScript is widely used in web development, while Go is ideal for servers and cloud applications."))),
-    lematizar(quitarStopwords_eng(word_tokenize("Python is slower than CPlus and Rust due to its interpreted nature."))),
-    lematizar(quitarStopwords_eng(word_tokenize("JavaScript has a strong ecosystem with Node.js for backend development, while Python is widely used in data science .-"))),
-    lematizar(quitarStopwords_eng(word_tokenize("JavaScript does not require compilation, while CPlus and Rust require code compilation before execution .-"))),
-    lematizar(quitarStopwords_eng(word_tokenize("Python and JavaScript have large communities and an extensive number of available libraries."))),
-    lematizar(quitarStopwords_eng(word_tokenize("Python is ideal for beginners, while Rust and CPlus are more suitable for experienced programmers.")))
+def procesar_texto(texto):
+    """
+    Pipeline completo NLP.
+    """
+
+    try:
+
+        tokens = word_tokenize(texto)
+
+        tokens = quitar_stopwords_eng(tokens)
+
+        tokens = lematizar(tokens)
+
+        return tokens
+
+    except Exception as e:
+
+        print("Error procesando texto:", e)
+
+        return []
+
+
+# ==========================================================
+# CORPUS
+# ==========================================================
+
+corpus_original = [
+
+    "Python is an amazing programming language.",
+
+    "Natural Language Processing is a branch of Artificial Intelligence.",
+
+    "Python is widely used in Machine Learning and NLP.",
+
+    "Text Mining extracts useful information from documents.",
+
+    "Machine Learning and NLP are transforming modern technology."
+
 ]
 
 
-# === MOSTRAR RESULTADOS ===
-print("=== RESULTADO DEL PIPELINE ===\n")
+# ==========================================================
+# PROCESAMIENTO DEL CORPUS
+# ==========================================================
 
-for i, doc in enumerate(corpus):
-    print(f"Documento {i+1}:")
-    print(doc)
-  
+corpus_procesado = []
+
+print("\n========== CORPUS PROCESADO ==========\n")
+
+for documento in corpus_original:
+
+    resultado = procesar_texto(documento)
+
+    corpus_procesado.append(" ".join(resultado))
+
+    print(resultado)
+
+
+# ==========================================================
+# FRECUENCIA DE TÉRMINOS
+# ==========================================================
+
+tokens_totales = []
+
+for documento in corpus_procesado:
+
+    tokens_totales.extend(documento.split())
+
+frecuencias = Counter(tokens_totales)
+
+print("\n========== FRECUENCIAS ==========\n")
+
+for palabra, frecuencia in frecuencias.most_common():
+
+    print(f"{palabra:<20}{frecuencia}")
+
+
+# ==========================================================
+# ESTADÍSTICAS DEL CORPUS
+# ==========================================================
+
+cantidad_documentos = len(corpus_original)
+
+cantidad_palabras = len(tokens_totales)
+
+cantidad_unicas = len(set(tokens_totales))
+
+promedio = cantidad_palabras / cantidad_documentos
+
+print("\n========== ESTADÍSTICAS ==========\n")
+
+print("Documentos:", cantidad_documentos)
+
+print("Palabras:", cantidad_palabras)
+
+print("Palabras únicas:", cantidad_unicas)
+
+print("Promedio por documento:", round(promedio, 2))
+
+
+# ==========================================================
+# TF-IDF
+# ==========================================================
+
+try:
+
+    vectorizador = TfidfVectorizer()
+
+    matriz_tfidf = vectorizador.fit_transform(corpus_procesado)
+
+    vocabulario = vectorizador.get_feature_names_out()
+
+    print("\n========== VOCABULARIO TF-IDF ==========\n")
+
+    for termino in vocabulario:
+
+        print(termino)
+
+except Exception as e:
+
+    print("Error calculando TF-IDF:", e)
+
+
+# ==========================================================
+# GRÁFICO DE FRECUENCIAS
+# ==========================================================
+
+try:
+
+    top_10 = frecuencias.most_common(10)
+
+    palabras = [x[0] for x in top_10]
+
+    cantidades = [x[1] for x in top_10]
+
+    plt.figure(figsize=(10, 5))
+
+    plt.bar(palabras, cantidades)
+
+    plt.title("Distribución de Frecuencia de Términos")
+
+    plt.xlabel("Palabras")
+
+    plt.ylabel("Frecuencia")
+
+    plt.xticks(rotation=45)
+
+    plt.tight_layout()
+
+    plt.show()
+
+except Exception as e:
+
+    print("Error generando gráfico:", e)
